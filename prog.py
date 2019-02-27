@@ -1,3 +1,4 @@
+# !/usr/bin/python
 import sys
 import os
 import string
@@ -57,6 +58,38 @@ def RefRunFiles():
         
     return res
 
+def RefRunResult():
+    ref_stdout = open("./ft_reference/1/1.stdout")
+    run_stdout = open("./ft_run/1/1.stdout")
+    
+    ref_values = []
+    run_values = []
+
+    for line in ref_stdout:
+        if line.find("Memory Working Set Current") > -1:
+            val = str()
+            for i in range(65, len(line)): #65 - start position of peak memory value in log files  
+                if line[i] == " ":
+                    break
+                val += line[i]
+            ref_values.append(float(val))
+    
+    for line in run_stdout:
+        if line.find("Memory Working Set Current") > -1:
+            val = str()
+            for i in range(65, len(line)): #65 - start position of peak memory value in log files  
+                if line[i] == "M":
+                    break
+                val += line[i]
+            run_values.append(float(val))
+
+    ref_values.sort()
+    run_values.sort()
+    max_value = float()
+
+    print(ref_values)
+    print(run_values)
+
 
 def ErrorsFinishes():#3
     #checking absence of errors and presence of finishes
@@ -89,7 +122,7 @@ def ErrorsFinishes():#3
 
 
 def main():
-    folder_count = 0
+    result = open("result.txt", "w")#result file for all tests
     os.chdir("./logs")# moving to working directory
     main_dirs = os.listdir()#getting list of main dirictories
 
@@ -98,41 +131,63 @@ def main():
         test_dirs = os.listdir()# list of test dirs
         for td in test_dirs:
             os.chdir("./" + str(td))
-            folder_count += 1
-            # print(os.getcwd())
-            #five checks
+            
+            try:
+                # myfile = open("myfile.csv", "r+") # or "a+", whatever you need
+                # os.open()
+                report = os.open("report.txt", os.O_WRONLY | os.O_CREAT )# report file for current test
+            except IOError:
+                print("Could not open file! Please close Excel!")
+                exit(0)
+            
+            '''five checks'''
             '''1'''
             ref, run = FoldersExisting()
             if not ref or not run:
+                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
                 if ref == False:
-                    print("FAIL: " + GetValidPath(os.getcwd()))
-                    print("directory missing: ft_reference")
+                    # print("FAIL: " + GetValidPath(os.getcwd()))
+                    os.write(report,"directory missing: ft_reference\n")
+                    result.write("directory missing: ft_reference\n")
+                    
                 elif run == False:
-                    print("FAIL: " + GetValidPath(os.getcwd()))
-                    print("directory missing: ft_run")
+                    # print("FAIL: " + GetValidPath(os.getcwd()))
+                    os.write(report, "directory missing: ft_run\n")
+                    result.write("directory missing: ft_run\n")
+                    
                 os.chdir("./..")
+                report.close()
                 continue
             '''2'''
             res = RefRunFiles()
-            if len(res) == 0:
-                print("OK: " + GetValidPath(os.getcwd()))
-            else:
-                print("FAIL: " + GetValidPath(os.getcwd()))
+            if not (len(res) == 0):
+                
+                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
+                # print("FAIL: " + GetValidPath(os.getcwd()))
                 for r in res:
-                    print(r)
+                    os.write(report, r + "\n")                    
+                    result.write(r + "\n")
                 os.chdir("./..")
+                report.close()
                 continue
 
             '''3'''
             res = ErrorsFinishes()
-            if len(res) == 0:
-                print("OK: " + GetValidPath(os.getcwd()))
-            else:
-                print("FAIL: " + GetValidPath(os.getcwd()))
+            if not(len(res) == 0):
+                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
                 for r in res:
-                    print(r)
-            os.chdir("./..")    
+                    os.write(report, "test")
+                    result.write(r + "\n")
+                            
+            '''4'''
+            RefRunResult()
+            os.chdir("./..")  
+            '''end of checks'''
+
+            os.close(report)
         os.chdir("./..")
-    # print("folder_count=", folder_count)
+    result.close()
+
+
 if __name__ == "__main__":
     main()
