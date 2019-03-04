@@ -16,11 +16,11 @@ def GetValidPath(raw_path, depth=2):
         valid_path += str(p[len(p) - i]) + "/"
     return valid_path  
 
-def FoldersExisting():#1
+def FoldersExisting(): #1
     #Checking if both folders are present
     return os.path.isdir("./ft_reference"), os.path.isdir("./ft_run")
 
-def RefRunFiles():
+def RefRunFiles(): #2
     ref_files = set()
     run_files = set()
     os.chdir("./ft_reference")
@@ -58,14 +58,17 @@ def RefRunFiles():
         
     return res
 
-def RefRunResult():
+def RefRunResults(): #4
     ref_stdout = open("./ft_reference/1/1.stdout")
     run_stdout = open("./ft_run/1/1.stdout")
     
     ref_values = []
-    run_values = []
+    max_value = float()
+    
+    ref_mesh_total = int()
+    run_mesh_total = int()
 
-    for line in ref_stdout:
+    for line in ref_stdout: # ref file
         if line.find("Memory Working Set Current") > -1:
             val = str()
             for i in range(65, len(line)): #65 - start position of peak memory value in log files  
@@ -73,6 +76,15 @@ def RefRunResult():
                     break
                 val += line[i]
             ref_values.append(float(val))
+        elif line.find("MESH::Bricks") > -1:
+            val = str()
+            for i in range(20, len(line)): # 20 - start position of total value
+                if line[i] == " ":
+                    break
+                val += line[i]
+            ref_mesh_total = int(val)
+
+
     
     for line in run_stdout:
         if line.find("Memory Working Set Current") > -1:
@@ -81,14 +93,30 @@ def RefRunResult():
                 if line[i] == "M":
                     break
                 val += line[i]
-            run_values.append(float(val))
+            val = float(val)
+            max_value = val if max_value < val else max_value
 
-    ref_values.sort()
-    run_values.sort()
-    max_value = float()
+        elif line.find("MESH::Bricks") > -1:
+            val = str()
+            for i in range(20, len(line)): # 20 - start position of total value
+                if line[i] == " ":
+                    break
+                val += line[i]
+            run_mesh_total = int(val)
+    
+    # print(ref_mesh_total, " ", run_mesh_total)
+    res = []
+    for n in ref_values:
+        if max_value / n > 4:
+            res.append(GetValidPath(os.getcwd(), 2) + ": different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(max_value, n, max_value / n))
+    df = float(run_mesh_total / ref_mesh_total - 1)
+    if df > 0.1:
+        res.append(GetValidPath(os.getcwd(), 2) + " different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(run_mesh_total, ref_mesh_total, df))
+    return res                        
 
-    print(ref_values)
-    print(run_values)
+
+    # print(ref_values)
+    # print(run_values)
 
 
 def ErrorsFinishes():#3
@@ -137,7 +165,7 @@ def main():
                 # os.open()
                 report = os.open("report.txt", os.O_WRONLY | os.O_CREAT )# report file for current test
             except IOError:
-                print("Could not open file! Please close Excel!")
+                print("Could not open file! Please close file!")
                 exit(0)
             
             '''five checks'''
@@ -147,43 +175,51 @@ def main():
                 result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
                 if ref == False:
                     # print("FAIL: " + GetValidPath(os.getcwd()))
-                    os.write(report,"directory missing: ft_reference\n")
+                    os.write(report,"directory missing: ft_reference\n".encode())
                     result.write("directory missing: ft_reference\n")
                     
                 elif run == False:
                     # print("FAIL: " + GetValidPath(os.getcwd()))
-                    os.write(report, "directory missing: ft_run\n")
+                    os.write(report, "directory missing: ft_run\n".encode())
                     result.write("directory missing: ft_run\n")
                     
-                os.chdir("./..")
-                report.close()
+                os.chdir("./..") # End of check for this test
+                os.close(report) # close report file for current test
                 continue
             '''2'''
             res = RefRunFiles()
-            if not (len(res) == 0):
-                
+            if not (len(res) == 0):                
                 result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
-                # print("FAIL: " + GetValidPath(os.getcwd()))
                 for r in res:
-                    os.write(report, r + "\n")                    
+                    os.write(report, (r + "\n").encode())                    
                     result.write(r + "\n")
-                os.chdir("./..")
-                report.close()
-                continue
 
+                os.chdir("./..") # End of check for this test
+                os.close(report) # close report file for current test
+                continue
             '''3'''
+            fail = False
             res = ErrorsFinishes()
             if not(len(res) == 0):
                 result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
                 for r in res:
-                    os.write(report, "test")
+                    os.write(report, (r + "\n").encode())
                     result.write(r + "\n")
-                            
+                fail = True
             '''4'''
-            RefRunResult()
-            os.chdir("./..")  
-            '''end of checks'''
+            res = RefRunResults()
+            if not(len(res) == 0):
+                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
+                for r in res:
+                    os.write(report, r.encode())
+                    result.write(r)
+                fail = True
 
+            '''end of checks'''
+            if not fail:
+                result.write("OK: " + GetValidPath(os.getcwd(), 2) + "\n")
+
+            os.chdir("./..")  
             os.close(report)
         os.chdir("./..")
     result.close()

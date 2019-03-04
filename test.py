@@ -9,10 +9,12 @@ for md in main_dir:
     test_dir = os.listdir()
     for td in test_dir:        
         os.chdir("./" + td)
-        report = open("report_test.txt", "w+")
-        report.write("JOpa")
+        report = open("report.txt", "r")
+        print(os.getcwd())
+        for line in report:
+            print(line)
+        print("===========================")
         report.close()
-        exit(0)
         # ref = open()
         os.chdir("./..")    
     os.chdir("./..")
