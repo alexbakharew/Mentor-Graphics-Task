@@ -8,7 +8,7 @@ def MoveUp(): # raising into parent dir
 def MoveDown(path): # descending into dir
     os.chdir("./" + str(path))
 
-def GetValidPath(raw_path, depth=2):
+def GetValidPath(raw_path, depth=2): #function for getting path of neccessary depth
     raw_path = str(raw_path)
     p = raw_path.split("/")
     valid_path = str()
@@ -21,41 +21,72 @@ def FoldersExisting(): #1
     return os.path.isdir("./ft_reference"), os.path.isdir("./ft_run")
 
 def RefRunFiles(): #2
-    ref_files = set()
-    run_files = set()
-    os.chdir("./ft_reference")
+    ref_files = set() # set of unique *.stdout files in ref folder
+    run_files = set() # set of unique *.stdout files in run folder
+    MoveDown("./ft_reference")
     dirs = os.listdir()
     for d in dirs:#1 2 3 ... n
-        os.chdir("./" + d)
+        MoveDown("./" + d)
         files = os.listdir() # *.stdout
         for f in files: # if there are few stdout files
             ref_files.add(GetValidPath(os.getcwd(), 1) + f)
-            #append(GetValidPath(os.getcwd(), 1) + f)
-        os.chdir("./..")
-    os.chdir("./..")
+        MoveUp()
+    MoveUp()
     dirs.clear()
     #----------------------------------------------
-    os.chdir("./ft_run")
+    MoveDown("./ft_run")
     dirs = os.listdir()
     for d in dirs:#1 2 3 ... n
-        os.chdir("./" + d)
+        MoveDown("./" + d)
         files = os.listdir() # *.stdout
         for f in files: # if there are few stdout files
             run_files.add(GetValidPath(os.getcwd(), 1) + f)
-        os.chdir("./..")
-    os.chdir("./..")
+        MoveUp()
+    MoveUp()
 
     unique_ref_files = ref_files - (ref_files & run_files)
     unique_run_files = run_files - (ref_files & run_files)
+    # trick with sets from descrete math - symmetric difference
+    # now we have files, which is unique for each folder
     res = list()
     if len(unique_ref_files) > 0 or len(unique_run_files) > 0:
         for f in unique_ref_files:
-            res.append("In ft_run there are missing files present in ft_reference:" + GetValidPath(os.getcwd(), 0) + f)
-            # print("In ft_run there are missing files present in ft_reference:" , GetValidPath(os.getcwd(), 0) + f)
+            res.append("In ft_run there are missing files present in ft_reference: '{}{}'\n".format(GetValidPath(os.getcwd(), 0), f))
+            
         
         for f in unique_run_files:
-            res.append("In ft_run there are extra files files not present in ft_reference:" + GetValidPath(os.getcwd(), 0) + f)
+            res.append("In ft_run there are extra files files not present in ft_reference: '{}{}'\n".format(GetValidPath(os.getcwd(), 0), f))
+            
         
+    return res
+
+def ErrorsFinishes():#3
+    #checking absence of errors and presence of finishes
+    res = []
+    MoveDown("./ft_run")
+    subdirs = os.listdir()
+    for sd in subdirs: # 1, 2, 3, ... n
+        MoveDown("./" + str(sd))
+        files = os.listdir() 
+        for name in files: # *.stdout
+            # print("FILE = ", name)
+            f = open(name, "r")
+            l = 1 #count of lines
+            is_finish = False
+            for line in f:
+                lower_line = line.lower()
+                if lower_line.find("error") != -1: # we find error
+                    line = line[0:len(line) - 1] # getting rid of \n in the end of the line
+                    res.append(GetValidPath(os.getcwd(), 1) + name + "(" + str(l) + "): " + line + "\n")
+                
+                if lower_line.find("solver finished at") != -1: #we find finish
+                    is_finish = True
+                    
+                l += 1
+        if not is_finish: # we do not find finish
+            res.append(GetValidPath(os.getcwd(), 1)  + name + ": missing 'Solver finished at'\n")
+        MoveUp()
+    MoveUp() 
     return res
 
 def RefRunResults(): #4
@@ -78,7 +109,7 @@ def RefRunResults(): #4
             ref_values.append(float(val))
         elif line.find("MESH::Bricks") > -1:
             val = str()
-            for i in range(20, len(line)): # 20 - start position of total value
+            for i in range(20, len(line)): # 20 - start position of total value in log file
                 if line[i] == " ":
                     break
                 val += line[i]
@@ -86,7 +117,7 @@ def RefRunResults(): #4
 
 
     
-    for line in run_stdout:
+    for line in run_stdout: # run file
         if line.find("Memory Working Set Current") > -1:
             val = str()
             for i in range(65, len(line)): #65 - start position of peak memory value in log files  
@@ -98,132 +129,92 @@ def RefRunResults(): #4
 
         elif line.find("MESH::Bricks") > -1:
             val = str()
-            for i in range(20, len(line)): # 20 - start position of total value
+            for i in range(20, len(line)): # 20 - start position of total value in log file
                 if line[i] == " ":
                     break
                 val += line[i]
             run_mesh_total = int(val)
     
-    # print(ref_mesh_total, " ", run_mesh_total)
     res = []
     for n in ref_values:
         if max_value / n > 4:
-            res.append(GetValidPath(os.getcwd(), 2) + ": different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(max_value, n, max_value / n))
+            res.append("1/1.stdout: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(max_value, n, max_value / n))
     df = float(run_mesh_total / ref_mesh_total - 1)
     if df > 0.1:
-        res.append(GetValidPath(os.getcwd(), 2) + " different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(run_mesh_total, ref_mesh_total, df))
+        res.append("1/1.stdout: different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(run_mesh_total, ref_mesh_total, df))
     return res                        
 
 
-    # print(ref_values)
-    # print(run_values)
-
-
-def ErrorsFinishes():#3
-    #checking absence of errors and presence of finishes
-    res = []
-    os.chdir("./ft_run")
-    subdirs = os.listdir()
-    for sd in subdirs: # 1, 2, 3, ... n
-        os.chdir("./" + str(sd))
-        files = os.listdir() 
-        for name in files: # *.stdout
-            # print("FILE = ", name)
-            f = open(name, "r")
-            l = 1 #count of lines
-            is_finish = False
-            for line in f:
-                lower_line = line.lower()
-                if lower_line.find("error") != -1: # we find error
-                    line = line[0:len(line) - 1] # getting rid of \n in the end of line
-                    res.append(GetValidPath(os.getcwd(), 1) + name + "(" + str(l) + "): " + line)
-                
-                if lower_line.find("solver finished at") != -1: #we find finish
-                    is_finish = True
-                    
-                l += 1
-        if not is_finish: # we do not find finish
-            res.append(GetValidPath(os.getcwd(), 1)  + name + ": missing 'Solver finished at'")
-        os.chdir("./..")
-    os.chdir("./..") 
-    return res
 
 
 def main():
-    result = open("result.txt", "w")#result file for all tests
-    os.chdir("./logs")# moving to working directory
+    result = os.open("result.txt", os.O_WRONLY | os.O_CREAT | os.O_TRUNC)#result file for all tests
+    MoveDown("./logs")# moving to working directory
     main_dirs = os.listdir()#getting list of main dirictories
 
     for md in main_dirs:
-        os.chdir("./" + str(md))
+        MoveDown("./" + str(md))
         test_dirs = os.listdir()# list of test dirs
+        test_dirs.sort() # sorting names of dirs
         for td in test_dirs:
-            os.chdir("./" + str(td))
-            
-            try:
-                # myfile = open("myfile.csv", "r+") # or "a+", whatever you need
-                # os.open()
-                report = os.open("report.txt", os.O_WRONLY | os.O_CREAT )# report file for current test
-            except IOError:
-                print("Could not open file! Please close file!")
-                exit(0)
+            MoveDown("./" + str(td))
+            report = os.open("report.txt", os.O_WRONLY | os.O_CREAT | os.O_TRUNC)# report file for current test
             
             '''five checks'''
             '''1'''
             ref, run = FoldersExisting()
             if not ref or not run:
-                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
+                os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 if ref == False:
                     # print("FAIL: " + GetValidPath(os.getcwd()))
                     os.write(report,"directory missing: ft_reference\n".encode())
-                    result.write("directory missing: ft_reference\n")
+                    os.write(result, "directory missing: ft_reference\n".encode())
                     
                 elif run == False:
                     # print("FAIL: " + GetValidPath(os.getcwd()))
                     os.write(report, "directory missing: ft_run\n".encode())
-                    result.write("directory missing: ft_run\n")
+                    os.write("directory missing: ft_run\n".encode())
                     
-                os.chdir("./..") # End of check for this test
+                MoveUp() # End of check for this test
                 os.close(report) # close report file for current test
                 continue
             '''2'''
             res = RefRunFiles()
             if not (len(res) == 0):                
-                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
+                os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 for r in res:
-                    os.write(report, (r + "\n").encode())                    
-                    result.write(r + "\n")
+                    os.write(report, r.encode())                    
+                    os.write(result, r.encode())
 
-                os.chdir("./..") # End of check for this test
+                MoveUp() # End of check for this test
                 os.close(report) # close report file for current test
                 continue
             '''3'''
-            fail = False
             res = ErrorsFinishes()
+            fail = False
             if not(len(res) == 0):
-                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
+                os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 for r in res:
-                    os.write(report, (r + "\n").encode())
-                    result.write(r + "\n")
+                    os.write(report, r.encode())
+                    os.write(result, r.encode())
                 fail = True
             '''4'''
             res = RefRunResults()
             if not(len(res) == 0):
-                result.write("FAIL: " + GetValidPath(os.getcwd()) + "\n")
+                os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 for r in res:
                     os.write(report, r.encode())
-                    result.write(r)
+                    os.write(result, r.encode())
                 fail = True
 
             '''end of checks'''
+
             if not fail:
-                result.write("OK: " + GetValidPath(os.getcwd(), 2) + "\n")
-
-            os.chdir("./..")  
+                os.write(result, ("OK: " + GetValidPath(os.getcwd(), 2) + "\n").encode())
+            MoveUp()  
             os.close(report)
-        os.chdir("./..")
-    result.close()
-
+        MoveUp()
+    os.close(result)
 
 if __name__ == "__main__":
     main()
