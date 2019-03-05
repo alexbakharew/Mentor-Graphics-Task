@@ -53,11 +53,9 @@ def RefRunFiles(): #2
         for f in unique_ref_files:
             res.append("In ft_run there are missing files present in ft_reference: '{}{}'\n".format(GetValidPath(os.getcwd(), 0), f))
             
-        
         for f in unique_run_files:
             res.append("In ft_run there are extra files files not present in ft_reference: '{}{}'\n".format(GetValidPath(os.getcwd(), 0), f))
             
-        
     return res
 
 def ErrorsFinishes():#3
@@ -69,9 +67,8 @@ def ErrorsFinishes():#3
         MoveDown("./" + str(sd))
         files = os.listdir() 
         for name in files: # *.stdout
-            # print("FILE = ", name)
             f = open(name, "r")
-            l = 1 #count of lines
+            l = 1 # count of lines
             is_finish = False
             for line in f:
                 lower_line = line.lower()
@@ -90,24 +87,39 @@ def ErrorsFinishes():#3
     return res
 
 def RefRunResults(): #4
-    ref_stdout = open("./ft_reference/1/1.stdout")
-    run_stdout = open("./ft_run/1/1.stdout")
+    f = str()
+    MoveDown("./ft_run")
+    files = os.listdir() # getting info about folder name in whole test
+    # Sometimes we may have 2/2.stdout files, not only 1/1.stdout
+    # So it is improper to use 1/1.stdout everywhere
+    if len(files) == 1:
+        f = str(files[0])
+    else:
+        # This case is posible but not mentioned in task, when we have two or more result folders in test
+        print("\nFATAL ERROR\n")
+        exit(-1)
+
+    MoveUp()
+    ref_stdout = open("./ft_reference/{}/{}.stdout".format(f, f))
+    run_stdout = open("./ft_run/{}/{}.stdout".format(f, f))
     
-    ref_values = []
-    max_value = float()
+    ref_max_value = float()
+    run_max_value = float()
     
     ref_mesh_total = int()
     run_mesh_total = int()
 
-    for line in ref_stdout: # ref file
-        if line.find("Memory Working Set Current") > -1:
+    for line in ref_stdout: # working with ref file
+        if line.find("Memory Working Set Current") > -1: # Memory set string
             val = str()
-            for i in range(65, len(line)): #65 - start position of peak memory value in log files  
+            for i in range(65, len(line)): # 65 - start position of peak memory value in log files  
                 if line[i] == " ":
                     break
                 val += line[i]
-            ref_values.append(float(val))
-        elif line.find("MESH::Bricks") > -1:
+            val = float(val)
+            ref_max_value = val if val > ref_max_value else ref_max_value
+        
+        elif line.find("MESH::Bricks") > -1: # mesh string
             val = str()
             for i in range(20, len(line)): # 20 - start position of total value in log file
                 if line[i] == " ":
@@ -115,19 +127,17 @@ def RefRunResults(): #4
                 val += line[i]
             ref_mesh_total = int(val)
 
-
-    
-    for line in run_stdout: # run file
-        if line.find("Memory Working Set Current") > -1:
+    for line in run_stdout: # working with run file
+        if line.find("Memory Working Set Current") > -1: # Memory set string
             val = str()
-            for i in range(65, len(line)): #65 - start position of peak memory value in log files  
-                if line[i] == "M":
+            for i in range(65, len(line)): # 65 - start position of peak memory value in log files  
+                if line[i] == " ":
                     break
                 val += line[i]
             val = float(val)
-            max_value = val if max_value < val else max_value
+            run_max_value = val if val > run_max_value else run_max_value
 
-        elif line.find("MESH::Bricks") > -1:
+        elif line.find("MESH::Bricks") > -1: # mesh string
             val = str()
             for i in range(20, len(line)): # 20 - start position of total value in log file
                 if line[i] == " ":
@@ -136,22 +146,19 @@ def RefRunResults(): #4
             run_mesh_total = int(val)
     
     res = []
-    for n in ref_values:
-        if max_value / n > 4:
-            res.append("1/1.stdout: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(max_value, n, max_value / n))
+    if run_max_value / ref_max_value > 4:
+            res.append("{}/{}.stdout: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(f, f, run_max_value, ref_max_value, run_max_value / ref_max_value))
     df = float(run_mesh_total / ref_mesh_total - 1)
     if df > 0.1:
-        res.append("1/1.stdout: different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(run_mesh_total, ref_mesh_total, df))
+        res.append("{}/{}.stdout: different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(f, f, run_mesh_total, ref_mesh_total, df))
     return res                        
-
-
-
 
 def main():
     result = os.open("result.txt", os.O_WRONLY | os.O_CREAT | os.O_TRUNC)#result file for all tests
     MoveDown("./logs")# moving to working directory
     main_dirs = os.listdir()#getting list of main dirictories
-
+    main_dirs.sort()
+    
     for md in main_dirs:
         MoveDown("./" + str(md))
         test_dirs = os.listdir()# list of test dirs
@@ -166,12 +173,10 @@ def main():
             if not ref or not run:
                 os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 if ref == False:
-                    # print("FAIL: " + GetValidPath(os.getcwd()))
                     os.write(report,"directory missing: ft_reference\n".encode())
                     os.write(result, "directory missing: ft_reference\n".encode())
                     
                 elif run == False:
-                    # print("FAIL: " + GetValidPath(os.getcwd()))
                     os.write(report, "directory missing: ft_run\n".encode())
                     os.write("directory missing: ft_run\n".encode())
                     
@@ -180,7 +185,7 @@ def main():
                 continue
             '''2'''
             res = RefRunFiles()
-            if not (len(res) == 0):                
+            if len(res) != 0:                
                 os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 for r in res:
                     os.write(report, r.encode())                    
@@ -192,7 +197,7 @@ def main():
             '''3'''
             res = ErrorsFinishes()
             fail = False
-            if not(len(res) == 0):
+            if len(res) != 0:
                 os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 for r in res:
                     os.write(report, r.encode())
@@ -200,7 +205,7 @@ def main():
                 fail = True
             '''4'''
             res = RefRunResults()
-            if not(len(res) == 0):
+            if len(res) != 0:
                 os.write(result, ("FAIL: " + GetValidPath(os.getcwd()) + "\n").encode())
                 for r in res:
                     os.write(report, r.encode())

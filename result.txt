@@ -20,18 +20,6 @@ OK: 13-ROTATED_FLOWS/00056-RRF-u_G_0_P_Sphere/
 FAIL: 13-ROTATED_FLOWS/00060-RRF-u_R_0_IW/
 directory missing: ft_reference
 FAIL: 13-ROTATED_FLOWS/00061-RRF-u_R_0_IW_ref_boundary_lev_2/
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=69.8, rel.diff=11.76, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=69.8, rel.diff=11.76, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=69.8, rel.diff=11.76, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=73.44, rel.diff=11.18, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=75.98, rel.diff=10.81, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.27, rel.diff=10.63, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.27, rel.diff=10.63, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.29, rel.diff=10.62, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.29, rel.diff=10.62, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.29, rel.diff=10.62, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.29, rel.diff=10.62, criterion=4)
-1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.29, rel.diff=10.62, criterion=4)
 1/1.stdout: different 'Memory Working Set Peak' (ft_run=821.0, ft_reference=77.29, rel.diff=10.62, criterion=4)
 OK: 13-ROTATED_FLOWS/00062-RRF-u_R_0_MF/
 OK: 13-ROTATED_FLOWS/00063-RRF-u_R_0_MF_ref_boundary_lev_2/
