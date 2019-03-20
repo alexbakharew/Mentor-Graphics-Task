@@ -60,7 +60,7 @@ FAIL: 14-HEAT_TRANSFER_IN_SOLID/00564-thin_profile_T_across_BC_-2_-3_-1_comp/
 OK: 14-HEAT_TRANSFER_IN_SOLID/00565-thin_profile_T_across_BC_-2_-3_-1_inc/
 OK: 14-HEAT_TRANSFER_IN_SOLID/00700-PCB_sandwich_across_arbitrary_Dirichlet/
 FAIL: 14-HEAT_TRANSFER_IN_SOLID/00701-PCB_sandwich_along_arbitrary_Dirichlet/
-In ft_run there are extra files files not present in ft_reference: '1/1.stdout'
+directory missing: ft_reference
 OK: 14-HEAT_TRANSFER_IN_SOLID/00703-PCB_chip_on_plate/
 OK: 14-HEAT_TRANSFER_IN_SOLID/00803-Net_asm_ss_-4__3_nodes (TWO)/
 OK: 14-HEAT_TRANSFER_IN_SOLID/00804-Net_asm_2_objects/

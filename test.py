@@ -2,27 +2,25 @@ import sys
 import os
 import glob
 import string
-os.chdir("./logs")
-main_dir = os.listdir()
-for md in main_dir:
-    os.chdir("./" + md)
-    test_dir = os.listdir()
-    for td in test_dir:        
-        os.chdir("./" + td)
-        report = open("report.txt", "r")
-        print(os.getcwd())
-        for line in report:
-            print(line)
-        print("===========================")
-        report.close()
-        # ref = open()
-        os.chdir("./..")    
-    os.chdir("./..")
-# print(validPath) 
-#dirList = os.listdir()
-# for d in dirList:
-#     os.chdir("./" + str(d))
-#     print(os.listdir())
-#     print("\n\n ---------------------------- \n\n")
-#     os.chdir("./..")
+import re
+def main():
+    # os.chdir("./logs/14-HEAT_TRANSFER_IN_SOLID/00003-_ss_ss__ins-Tfixed/ft_run/1")
+    file = open("./logs/14-HEAT_TRANSFER_IN_SOLID/00003-_ss_ss__ins-Tfixed/ft_run/1/1.stdout")
+    result = []
+    # for line in file:
+    #     match = re.findall("Current = \d*.\d* Mb.* Peak = \d*.\d* Mb", line)
+    #     if len(match) > 0:
+    #         result.append(match)
+    # values = []
+    # for r in result:
+    #     tmp = re.findall("\d*[.]\d*", str(r))
+    #     values.append(tmp)
+    
+    # print(values)
+    f = open("tmp", )
+    for line in f:
+        print(line)
+
+if __name__ == "__main__":
+    main()
     
