@@ -75,11 +75,10 @@ def ProcessFiles(path, report): #3, #4
 
             res = re.search("error", lower_line)
             if res != None:
-                func_result = False
                 report.write("{}({}): {}".format(track, line_count, line))
                 continue
             
-            res = re.search("solver finished at", lower_line)
+            res = re.search("Solver finished at", line)
             if res != None:
                 is_finish = True
                 continue
