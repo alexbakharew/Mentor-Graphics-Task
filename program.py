@@ -75,25 +75,24 @@ def ProcessFiles(path, report): #3, #4
 
             res = re.search("error", lower_line)
             if res != None:
-                func_result = False
                 report.write("{}({}): {}".format(track, line_count, line))
                 continue
             
-            res = re.search("solver finished at", lower_line)
+            res = re.search("Solver finished at", line)
             if res != None:
                 is_finish = True
                 continue
             
-            res = re.search("Peak = \d+.\d+ Mb", line)
+            res = re.search("Memory Working Set Current = ([0-9]+.*[0-9]*) Mb, Memory Working Set Peak = ([0-9]+.*[0-9]*) Mb", line)
             if res != None:
-                val = float(re.search("\d+[.]\d+", str(res)).group(0))
+                val = float(res.group(2))
                 if val > peak_val:
                     peak_val = val
                 continue
             
-            res = re.search("MESH::Bricks: Total=\d+.", line)
+            res = re.search("MESH::Bricks: Total=([0-9]+.*[0-9]*) Gas=([0-9]+.*[0-9]*) Solid=([0-9]+.*[0-9]*) Partial=([0-9]+.*[0-9]*) Irregular=([0-9]+.*[0-9]*)", line)
             if res != None:
-                mesh_val = int(re.search("\d+[ ]", str(res)).group(0))
+                mesh_val = int(res.group(1))
                 continue  
                 
         if not is_finish:
@@ -114,35 +113,29 @@ def ProcessFiles(path, report): #3, #4
         ref_peak_val, ref_mesh_val = ReadFile(ref_stdout, track, report)
 
         if run_peak_val / ref_peak_val > 4:
-            report.write("{}: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(track, run_peak_val, ref_peak_val, run_peak_val / ref_peak_val))
+            report.write("{}: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(track, run_peak_val, ref_peak_val, run_peak_val / ref_peak_val - 1))
 
         df = float(run_mesh_val / ref_mesh_val - 1)
         if df > 0.1:
             report.write("{}: different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(track, run_mesh_val, ref_mesh_val, df))
 
-def PrintReport(path): # function for printing report of current test
-    report = open(path + "/report.txt", "r")
-    if os.stat(path + "/report.txt").st_size == 0:
-        print("OK: " + path)
-    else:
-        print("FAIL: " + path)
-        for line in report:
-            print(line.rstrip())
-    report.close()
 
 def CheckTest(path): # We will launch all 4 checks consistently
-    report = open(path + "/report.txt", "w")
-
-    if not FoldersExisting(path, report): #1
-        report.close()
-        return
+    with open(path + "/report.txt", "w") as report:
+        if not FoldersExisting(path, report): #1
+            return
+        if not RefRunFiles(path, report): #2
+            return
+        ProcessFiles(path, report)
     
-    if not RefRunFiles(path, report): #2
-        report.close()        
-        return
-    ProcessFiles(path, report)
-    report.close()
-    
+def PrintReport(path): # function for printing report of current test
+    with open(path + "/report.txt", "r") as report:
+        if os.stat(path + "/report.txt").st_size == 0:
+            print("OK: " + path)
+        else:
+            print("FAIL: " + path)
+            for line in report:
+                print(line.rstrip())
 
 def main():
     os.chdir("./logs")# move to working directory
