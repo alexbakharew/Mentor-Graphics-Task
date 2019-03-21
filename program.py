@@ -83,14 +83,14 @@ def ProcessFiles(path, report): #3, #4
                 is_finish = True
                 continue
             
-            res = re.search("Memory Working Set Current = ([0-9]+.*[0-9]*) Mb, Memory Working Set Peak = ([0-9]+.*[0-9]*) Mb", line)
+            res = re.match("Memory Working Set Current = ([0-9]+.*[0-9]*) Mb, Memory Working Set Peak = ([0-9]+.*[0-9]*) Mb", line)
             if res != None:
                 val = float(res.group(2))
                 if val > peak_val:
                     peak_val = val
                 continue
             
-            res = re.search("MESH::Bricks: Total=([0-9]+.*[0-9]*) Gas=([0-9]+.*[0-9]*) Solid=([0-9]+.*[0-9]*) Partial=([0-9]+.*[0-9]*) Irregular=([0-9]+.*[0-9]*)", line)
+            res = re.match("MESH::Bricks: Total=([0-9]+.*[0-9]*) Gas=([0-9]+.*[0-9]*) Solid=([0-9]+.*[0-9]*) Partial=([0-9]+.*[0-9]*) Irregular=([0-9]+.*[0-9]*)", line)
             if res != None:
                 mesh_val = int(res.group(1))
                 continue  
