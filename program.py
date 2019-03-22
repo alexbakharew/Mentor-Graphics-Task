@@ -78,19 +78,19 @@ def ProcessFiles(path, report): #3, #4
                 report.write("{}({}): {}".format(track, line_count, line))
                 continue
             
-            res = re.search("Solver finished at", line)
+            res = re.search("^Solver finished at", line)
             if res != None:
                 is_finish = True
                 continue
             
-            res = re.match("Memory Working Set Current = ([0-9]+.*[0-9]*) Mb, Memory Working Set Peak = ([0-9]+.*[0-9]*) Mb", line)
+            res = re.match("Memory Working Set Current = .+ Mb, Memory Working Set Peak = (.+) Mb", line)
             if res != None:
-                val = float(res.group(2))
+                val = float(res.group(1))
                 if val > peak_val:
                     peak_val = val
                 continue
             
-            res = re.match("MESH::Bricks: Total=([0-9]+.*[0-9]*) Gas=([0-9]+.*[0-9]*) Solid=([0-9]+.*[0-9]*) Partial=([0-9]+.*[0-9]*) Irregular=([0-9]+.*[0-9]*)", line)
+            res = re.match("MESH::Bricks: Total=([\d, .]+)", line)
             if res != None:
                 mesh_val = int(res.group(1))
                 continue  
@@ -112,12 +112,15 @@ def ProcessFiles(path, report): #3, #4
         run_peak_val, run_mesh_val = ReadFile(run_stdout, track, report)
         ref_peak_val, ref_mesh_val = ReadFile(ref_stdout, track, report)
 
-        if run_peak_val / ref_peak_val > 4:
-            report.write("{}: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=4)\n".format(track, run_peak_val, ref_peak_val, run_peak_val / ref_peak_val - 1))
-
-        df = float(run_mesh_val / ref_mesh_val - 1)
-        if df > 0.1:
-            report.write("{}: different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion=0.1)\n".format(track, run_mesh_val, ref_mesh_val, df))
+        rel_diff = (run_peak_val - ref_peak_val) / ref_peak_val
+        memory_criterion = 4
+        if rel_diff > memory_criterion:
+            report.write("{}: different 'Memory Working Set Peak' (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion={})\n".format(track, run_peak_val, ref_peak_val, rel_diff, memory_criterion))
+        
+        df = float((run_mesh_val - ref_mesh_val) / ref_mesh_val)
+        total_criterion = 0.1
+        if df > total_criterion:
+            report.write("{}: different 'Total' of bricks (ft_run={}, ft_reference={}, rel.diff={:.2f}, criterion={})\n".format(track, run_mesh_val, ref_mesh_val, df, total_criterion))
 
 
 def CheckTest(path): # We will launch all 4 checks consistently
